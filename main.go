@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,12 +13,20 @@ import (
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/danipurwadi/internal-transfer-system/app/debug"
+	"github.com/danipurwadi/internal-transfer-system/app/mux"
 	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
+	"github.com/danipurwadi/internal-transfer-system/foundation/web"
 )
 
 var build = "develop"
 
 func main() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Global recovery from panic. Error: %s", r)
+		}
+	}()
+
 	var log *logger.Logger
 
 	events := logger.Events{
@@ -27,7 +36,7 @@ func main() {
 	}
 
 	traceIDFn := func(ctx context.Context) string {
-		return "" //web.GetTraceID(ctx)
+		return web.GetTraceID(ctx)
 	}
 
 	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "TRANSACTION", traceIDFn, events)
@@ -115,7 +124,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      nil,
+		Handler:      mux.WebApi(log, shutdown),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,

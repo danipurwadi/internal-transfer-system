@@ -23,6 +23,5 @@ func Mux() *http.ServeMux {
 	mux.Handle("/debug/vars/", expvar.Handler())
 
 	statsviz.Register(mux)
-
 	return mux
 }
