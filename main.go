@@ -14,6 +14,8 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/danipurwadi/internal-transfer-system/app/debug"
 	"github.com/danipurwadi/internal-transfer-system/app/mux"
+	"github.com/danipurwadi/internal-transfer-system/business/api/postgresdb"
+	"github.com/danipurwadi/internal-transfer-system/business/transactionbus/stores/transactiondb"
 	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
 	"github.com/danipurwadi/internal-transfer-system/foundation/web"
 )
@@ -70,13 +72,11 @@ func run(ctx context.Context, log *logger.Logger) error {
 			CORSAllowedOrigins []string      `conf:"default:*"`
 		}
 		DB struct {
-			User         string `conf:"default:postgres"`
-			Password     string `conf:"default:postgres,mask"`
-			HostPort     string `conf:"default:database-service.sales-system.svc.cluster.local"`
-			Name         string `conf:"default:postgres"`
-			MaxIdleConns int    `conf:"default:0"`
-			MaxOpenConns int    `conf:"default:0"`
-			DisableTLS   bool   `conf:"default:true"`
+			User     string `conf:"default:postgres"`
+			Password string `conf:"default:password,mask"`
+			Host     string `conf:"default:host.docker.internal"`
+			Port     int    `conf:"default:5432"`
+			Name     string `conf:"default:transaction"`
 		}
 	}{
 		Version: conf.Version{
@@ -102,6 +102,22 @@ func run(ctx context.Context, log *logger.Logger) error {
 		return fmt.Errorf("generating config for output: %w", err)
 	}
 	log.Info(ctx, "startup", "config", out)
+
+	// -------------------------------------------------------------------------
+	// Database Support
+
+	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.Host)
+
+	postgresConn := postgresdb.New(postgresdb.Config{
+		User:     cfg.DB.User,
+		Password: cfg.DB.Password,
+		Host:     cfg.DB.Host,
+		Port:     cfg.DB.Port,
+		Database: cfg.DB.Name,
+	})
+
+	// initialise empty for now
+	_ = transactiondb.NewTxQueries(postgresConn)
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service
