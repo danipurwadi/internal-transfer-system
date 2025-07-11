@@ -1,15 +1,15 @@
-package transactiondb
+package transferdb
 
 import (
 	"context"
 
-	transactiondb "github.com/danipurwadi/internal-transfer-system/business/transactionbus/stores/transactiondb/gen"
+	transferdbgen "github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb/gen"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type TxQuerier interface {
-	transactiondb.Querier
+	transferdbgen.Querier
 	WithTx(tx pgx.Tx) TxQuerier
 	GetTx(ctx context.Context) (pgx.Tx, error)
 }
@@ -18,13 +18,13 @@ var _ TxQuerier = (*TxQueries)(nil)
 
 func NewTxQueries(pool *pgxpool.Pool) *TxQueries {
 	return &TxQueries{
-		Queries: transactiondb.New(pool),
+		Queries: transferdbgen.New(pool),
 		TxnPool: pool,
 	}
 }
 
 type TxQueries struct {
-	*transactiondb.Queries
+	*transferdbgen.Queries
 	TxnPool *pgxpool.Pool
 }
 

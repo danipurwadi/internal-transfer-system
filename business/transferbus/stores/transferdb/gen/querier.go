@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.29.0
 
-package transactiondb
+package transferdbgen
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 
 type Querier interface {
 	CreateAccount(ctx context.Context, arg CreateAccountParams) error
+	CreateTransaction(ctx context.Context, arg CreateTransactionParams) error
+	GetBalance(ctx context.Context, accountID int64) (interface{}, error)
 }
 
 var _ Querier = (*Queries)(nil)

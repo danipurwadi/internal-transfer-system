@@ -15,7 +15,7 @@ import (
 	"github.com/danipurwadi/internal-transfer-system/app/debug"
 	"github.com/danipurwadi/internal-transfer-system/app/mux"
 	"github.com/danipurwadi/internal-transfer-system/business/api/postgresdb"
-	"github.com/danipurwadi/internal-transfer-system/business/transactionbus/stores/transactiondb"
+	"github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb"
 	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
 	"github.com/danipurwadi/internal-transfer-system/foundation/web"
 )
@@ -41,9 +41,7 @@ func main() {
 		return web.GetTraceID(ctx)
 	}
 
-	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "TRANSACTION", traceIDFn, events)
-
-	// -------------------------------------------------------------------------
+	log = logger.NewWithEvents(os.Stdout, logger.LevelInfo, "TRANSFER", traceIDFn, events)
 
 	ctx := context.Background()
 
@@ -76,16 +74,16 @@ func run(ctx context.Context, log *logger.Logger) error {
 			Password string `conf:"default:password,mask"`
 			Host     string `conf:"default:host.docker.internal"`
 			Port     int    `conf:"default:5432"`
-			Name     string `conf:"default:transaction"`
+			Name     string `conf:"default:transfer"`
 		}
 	}{
 		Version: conf.Version{
 			Build: build,
-			Desc:  "Transaction",
+			Desc:  "Transfer",
 		},
 	}
 
-	const prefix = "TRANSACTION"
+	const prefix = "TRANSFER"
 	_, err := conf.Parse(prefix, &cfg)
 	if err != nil {
 		return fmt.Errorf("parsing config: %w", err)
@@ -117,7 +115,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	})
 
 	// initialise empty for now
-	_ = transactiondb.NewTxQueries(postgresConn)
+	_ = transferdb.NewTxQueries(postgresConn)
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service

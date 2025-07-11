@@ -17,17 +17,17 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 // to the logs.
 type Logger func(ctx context.Context, msg string, v ...any)
 
-type App struct {
+type Client struct {
 	// log Logger
 	*http.ServeMux
 	shutdown chan os.Signal
 	mw       []MidHandler
 }
 
-func NewApp(shutdown chan os.Signal, mw ...MidHandler) *App {
+func NewClient(shutdown chan os.Signal, mw ...MidHandler) *Client {
 	mux := http.NewServeMux()
 
-	return &App{
+	return &Client{
 		ServeMux: mux,
 		shutdown: shutdown,
 		mw:       mw,
@@ -37,7 +37,7 @@ func NewApp(shutdown chan os.Signal, mw ...MidHandler) *App {
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the application server mux.
-func (a *App) HandleFunc(pattern string, handler Handler, mw ...MidHandler) {
+func (a *Client) HandleFunc(pattern string, handler Handler, mw ...MidHandler) {
 	// handler = wrapMiddleware(mw, handler)
 	handler = wrapMiddleware(a.mw, handler)
 

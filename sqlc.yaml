@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "business/transactionbus/stores/transactiondb/queries"
-    schema: "business/transactionbus/stores/transactiondb/schemas"
+    queries: "business/transferbus/stores/transferdb/queries"
+    schema: "business/transferbus/stores/transferdb/schemas"
     gen:
       go:
-        package: "transactiondb"
-        out: "business/transactionbus/stores/transactiondb/gen"
+        package: "transferdbgen"
+        out: "business/transferbus/stores/transferdb/gen"
         sql_package: "pgx/v5"
         emit_interface: true
         emit_json_tags: true
