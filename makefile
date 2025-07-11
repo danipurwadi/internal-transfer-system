@@ -9,6 +9,9 @@ GOPATH_ARG 		:= $(if $(GOPATH),$(GOPATH)/pkg/mod,$(GOPATH_DEFAULT))
 
 # ==============================================================================
 # Development Commands
+tidy:
+	go mod tidy
+
 start:
 	@GOPATH=$(GOPATH_ARG) docker compose -f zarf/docker/docker-compose.yml \
 		-p internal-transfer-system up

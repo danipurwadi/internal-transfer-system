@@ -1,0 +1,26 @@
+# .github/workflows/go.yml
+# This workflow file defines a GitHub Action that runs tests on every push and pull request.
+
+# The name of the workflow, which will be displayed on the Actions tab of your GitHub repository.
+name: Go CI
+
+# 'on' defines the events that trigger this workflow.
+on:
+  # Trigger the workflow on push events to the 'main' branch.
+  push:
+    branches: [ main ]
+
+# 'jobs' groups together all the jobs that will run in the workflow.
+jobs:
+  # 'build' is the ID of our single job.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Set up project
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.8'
+    - name: Run tests
+      run: go test -v ./...
