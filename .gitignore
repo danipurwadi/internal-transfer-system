@@ -1,0 +1,12 @@
+## Mac defaults##
+.DS_Store
+
+.*.env
+!.example.env
+
+tmp
+dump.rdb
+.vscode
+
+# code coverage report name
+cover.out

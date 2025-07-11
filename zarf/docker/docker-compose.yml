@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  internal-transfer-system:
+    container_name: internal-transfer-system
+    image: cosmtrek/air:v1.45.0
+    working_dir: /internal-transfer-system
+    volumes:
+      - ../../:/internal-transfer-system/
+      - ${GOPATH}:/go/pkg/mod # Put modules cache into a separate volume to reuse it between docker-compose runs
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./.local.env
+    environment:
+      - DISPLAY="host.docker.internal:0.0"
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres-db
+    image: postgres:14.8
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+volumes:
+  pg_data:
