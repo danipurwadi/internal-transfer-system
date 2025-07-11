@@ -10,6 +10,7 @@ services:
       - ${GOPATH}:/go/pkg/mod # Put modules cache into a separate volume to reuse it between docker-compose runs
     ports:
       - "8080:8080"
+      - "8090:8090"
     env_file:
       - ./.local.env
     environment:

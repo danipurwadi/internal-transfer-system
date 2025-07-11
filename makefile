@@ -25,3 +25,6 @@ exit:
 	@GOPATH=$(GOPATH_ARG) docker compose -f zarf/docker/docker-compose.yml \
 		-p internal-transfer-system down
 
+# ======
+stats:
+	open -a "Google Chrome" http://localhost:8090/debug/statsviz 
