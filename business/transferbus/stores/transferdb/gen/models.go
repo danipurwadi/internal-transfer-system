@@ -7,18 +7,17 @@ package transferdbgen
 import (
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 type Account struct {
 	AccountID        int64     `json:"accountId"`
-	Status           string    `json:"status"`
 	CreatedDate      time.Time `json:"createdDate"`
 	LastModifiedDate time.Time `json:"lastModifiedDate"`
 }
 
 type Transaction struct {
-	AccountID   int64          `json:"accountId"`
-	Amount      pgtype.Numeric `json:"amount"`
-	CreatedDate time.Time      `json:"createdDate"`
+	AccountID   int64           `json:"accountId"`
+	Amount      decimal.Decimal `json:"amount"`
+	CreatedDate time.Time       `json:"createdDate"`
 }

@@ -9,7 +9,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 const createTransaction = `-- name: CreateTransaction :exec
@@ -18,9 +18,9 @@ VALUES ($1, $2, $3)
 `
 
 type CreateTransactionParams struct {
-	AccountID   int64          `json:"accountId"`
-	Amount      pgtype.Numeric `json:"amount"`
-	CreatedDate time.Time      `json:"createdDate"`
+	AccountID   int64           `json:"accountId"`
+	Amount      decimal.Decimal `json:"amount"`
+	CreatedDate time.Time       `json:"createdDate"`
 }
 
 func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionParams) error {
@@ -29,13 +29,13 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 }
 
 const getBalance = `-- name: GetBalance :one
-SELECT COALESCE(SUM(amount), 0) AS balance 
+SELECT COALESCE(SUM(amount), 0)::NUMERIC AS balance 
 FROM transactions WHERE account_id = $1
 `
 
-func (q *Queries) GetBalance(ctx context.Context, accountID int64) (interface{}, error) {
+func (q *Queries) GetBalance(ctx context.Context, accountID int64) (decimal.Decimal, error) {
 	row := q.db.QueryRow(ctx, getBalance, accountID)
-	var balance interface{}
+	var balance decimal.Decimal
 	err := row.Scan(&balance)
 	return balance, err
 }

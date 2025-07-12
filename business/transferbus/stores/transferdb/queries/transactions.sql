@@ -1,5 +1,5 @@
 -- name: GetBalance :one
-SELECT COALESCE(SUM(amount), 0) AS balance 
+SELECT COALESCE(SUM(amount), 0)::NUMERIC AS balance 
 FROM transactions WHERE account_id = @account_id;
 
 -- name: CreateTransaction :exec

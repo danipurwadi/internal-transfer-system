@@ -6,12 +6,16 @@ package transferdbgen
 
 import (
 	"context"
+
+	"github.com/shopspring/decimal"
 )
 
 type Querier interface {
 	CreateAccount(ctx context.Context, arg CreateAccountParams) error
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) error
-	GetBalance(ctx context.Context, accountID int64) (interface{}, error)
+	GetAccount(ctx context.Context, accountID int64) (Account, error)
+	GetAccounts(ctx context.Context, accountIds []int64) ([]Account, error)
+	GetBalance(ctx context.Context, accountID int64) (decimal.Decimal, error)
 }
 
 var _ Querier = (*Queries)(nil)

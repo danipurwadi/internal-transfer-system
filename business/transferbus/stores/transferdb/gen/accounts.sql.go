@@ -11,23 +11,52 @@ import (
 )
 
 const createAccount = `-- name: CreateAccount :exec
-INSERT INTO accounts (account_id, status, created_date, last_modified_date)
-VALUES ($1=account_id, $2=status, $3=created_date, $4=last_modified_date)
+INSERT INTO accounts (account_id, created_date, last_modified_date)
+VALUES ($1, $2, $3)
 `
 
 type CreateAccountParams struct {
 	AccountID        int64     `json:"accountId"`
-	Status           string    `json:"status"`
 	CreatedDate      time.Time `json:"createdDate"`
 	LastModifiedDate time.Time `json:"lastModifiedDate"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {
-	_, err := q.db.Exec(ctx, createAccount,
-		arg.AccountID,
-		arg.Status,
-		arg.CreatedDate,
-		arg.LastModifiedDate,
-	)
+	_, err := q.db.Exec(ctx, createAccount, arg.AccountID, arg.CreatedDate, arg.LastModifiedDate)
 	return err
+}
+
+const getAccount = `-- name: GetAccount :one
+SELECT account_id, created_date, last_modified_date FROM accounts WHERE account_id = $1
+`
+
+func (q *Queries) GetAccount(ctx context.Context, accountID int64) (Account, error) {
+	row := q.db.QueryRow(ctx, getAccount, accountID)
+	var i Account
+	err := row.Scan(&i.AccountID, &i.CreatedDate, &i.LastModifiedDate)
+	return i, err
+}
+
+const getAccounts = `-- name: GetAccounts :many
+SELECT account_id, created_date, last_modified_date FROM accounts where account_id = any($1::bigint[])
+`
+
+func (q *Queries) GetAccounts(ctx context.Context, accountIds []int64) ([]Account, error) {
+	rows, err := q.db.Query(ctx, getAccounts, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Account
+	for rows.Next() {
+		var i Account
+		if err := rows.Scan(&i.AccountID, &i.CreatedDate, &i.LastModifiedDate); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

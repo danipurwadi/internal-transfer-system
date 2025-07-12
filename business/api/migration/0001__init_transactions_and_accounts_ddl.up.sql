@@ -1,14 +1,13 @@
 CREATE TABLE
     IF NOT EXISTS accounts (
-        account_id BIGINT NOT NULL,
-        status VARCHAR(100) NOT NULL,
-        created_date TIMESTAMPTZ NOT NULL,
-        last_modified_date TIMESTAMPTZ NOT NULL
+        account_id BIGINT PRIMARY KEY,
+        created_date TIMESTAMPTZ NOT NULL DEFAULT NOW (),
+        last_modified_date TIMESTAMPTZ NOT NULL DEFAULT NOW ()
     );
 
 CREATE TABLE
     if not EXISTS transactions (
-        account_id BIGINT NOT NULL,
+        account_id BIGINT NOT NULL REFERENCES accounts (account_id) ON DELETE RESTRICT,
         amount NUMERIC(19, 4) NOT NULL,
-        created_date TIMESTAMPTZ NOT NULL
+        created_date TIMESTAMPTZ NOT NULL DEFAULT NOW ()
     );
