@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -37,7 +38,7 @@ func NewClient(shutdown chan os.Signal, mw ...MidHandler) *Client {
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the application server mux.
-func (a *Client) HandleFunc(pattern string, handler Handler, mw ...MidHandler) {
+func (a *Client) Handle(method string, path string, handler Handler, mw ...MidHandler) {
 	// handler = wrapMiddleware(mw, handler)
 	handler = wrapMiddleware(a.mw, handler)
 
@@ -53,6 +54,6 @@ func (a *Client) HandleFunc(pattern string, handler Handler, mw ...MidHandler) {
 			return
 		}
 	}
-
-	a.ServeMux.HandleFunc(pattern, h)
+	finalPath := fmt.Sprintf("%s %s", method, path)
+	a.ServeMux.HandleFunc(finalPath, h)
 }

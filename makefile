@@ -20,11 +20,11 @@ stop:
 	@GOPATH=$(GOPATH_ARG) docker compose -f zarf/docker/docker-compose.yml \
 		-p internal-transfer-system stop
 
-# Exit cleans up the docker-compose services using the down command.
+# Exit cleans up the docker-compose services using the down command and removes volumes.
 exit:
 	@GOPATH=$(GOPATH_ARG) docker compose -f zarf/docker/docker-compose.yml \
 		-p internal-transfer-system down -v
 
-# ======
+# ==============================================================================
 stats:
 	open -a "Google Chrome" http://localhost:8090/debug/statsviz 

@@ -14,7 +14,9 @@ import (
 	"github.com/ardanlabs/conf/v3"
 	"github.com/danipurwadi/internal-transfer-system/app/debug"
 	"github.com/danipurwadi/internal-transfer-system/app/mux"
+	"github.com/danipurwadi/internal-transfer-system/app/transferapp"
 	"github.com/danipurwadi/internal-transfer-system/business/api/postgresdb"
+	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb"
 	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
 	"github.com/danipurwadi/internal-transfer-system/foundation/web"
@@ -106,7 +108,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.Host)
 
-	postgresConn := postgresdb.New(postgresdb.Config{
+	dbConn := postgresdb.New(postgresdb.Config{
 		User:     cfg.DB.User,
 		Password: cfg.DB.Password,
 		Host:     cfg.DB.Host,
@@ -114,8 +116,33 @@ func run(ctx context.Context, log *logger.Logger) error {
 		Database: cfg.DB.Name,
 	})
 
-	// initialise empty for now
-	_ = transferdb.NewTxQueries(postgresConn)
+	dbClient := transferdb.NewTxQueries(dbConn)
+	transferBus := transferbus.New(dbClient)
+	transferApp := transferapp.NewApp(transferBus)
+
+	// -------------------------------------------------------------------------
+	// Start API Service
+
+	log.Info(ctx, "startup", "status", "initializing V1 API support")
+
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
+
+	api := http.Server{
+		Addr:         cfg.Web.APIHost,
+		Handler:      mux.WebApi(log, shutdown, transferApp),
+		ReadTimeout:  cfg.Web.ReadTimeout,
+		WriteTimeout: cfg.Web.WriteTimeout,
+		IdleTimeout:  cfg.Web.IdleTimeout,
+		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
+	}
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		log.Info(ctx, "startup", "status", "api router started", "host", api.Addr)
+		serverErrors <- api.ListenAndServe()
+	}()
 
 	// -------------------------------------------------------------------------
 	// Start Debug Service
@@ -129,28 +156,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	}()
 
 	// -------------------------------------------------------------------------
-	// Start API Service
-
-	log.Info(ctx, "startup", "status", "initializing V1 API support")
-
-	shutdown := make(chan os.Signal, 1)
-	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
-
-	api := http.Server{
-		Addr:         cfg.Web.APIHost,
-		Handler:      mux.WebApi(log, shutdown),
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
-		IdleTimeout:  cfg.Web.IdleTimeout,
-		ErrorLog:     logger.NewStdLogger(log, logger.LevelError),
-	}
-
-	serverErrors := make(chan error, 1)
-
-	go func() {
-		log.Info(ctx, "startup", "status", "api router started", "host", api.Addr)
-		serverErrors <- api.ListenAndServe()
-	}()
+	// Handle shutdown
 
 	select {
 	case err := <-serverErrors:
