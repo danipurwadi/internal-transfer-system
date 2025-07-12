@@ -12,7 +12,7 @@ import (
 )
 
 type Querier interface {
-	CreateAccount(ctx context.Context, arg CreateAccountParams) error
+	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) error
 	CreditAccount(ctx context.Context, arg CreditAccountParams) (pgconn.CommandTag, error)
 	DebitAccount(ctx context.Context, arg DebitAccountParams) (pgconn.CommandTag, error)

@@ -50,7 +50,7 @@ func (a *App) createAccount(ctx context.Context, w http.ResponseWriter, r *http.
 		return customerror.New(customerror.FailedPrecondition, err)
 	}
 
-	err = a.transferbus.CreateAccount(ctx, account)
+	_, err = a.transferbus.CreateAccount(ctx, account)
 	if err != nil {
 		if errors.Is(err, transferbus.ErrAccAlreadyExist) {
 			return customerror.New(customerror.AlreadyExists, err)

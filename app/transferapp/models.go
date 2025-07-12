@@ -34,13 +34,13 @@ func (r AccountCreationRequest) Validate() error {
 	return nil
 }
 
-func toBusAccCreation(req AccountCreationRequest) (transferbus.AccountCreation, error) {
+func toBusAccCreation(req AccountCreationRequest) (transferbus.NewAccount, error) {
 	decimalBalance, err := decimal.NewFromString(req.InitialBalance)
 	if err != nil {
-		return transferbus.AccountCreation{}, err
+		return transferbus.NewAccount{}, err
 	}
 
-	return transferbus.AccountCreation{
+	return transferbus.NewAccount{
 		AccountId:      req.AccountId,
 		InitialBalance: decimalBalance,
 	}, nil

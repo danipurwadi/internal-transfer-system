@@ -1,6 +1,7 @@
--- name: CreateAccount :exec
+-- name: CreateAccount :one
 INSERT INTO accounts (account_id, balance, created_date, last_modified_date)
-VALUES (@account_id, @balance, @created_date, @last_modified_date);
+VALUES (@account_id, @balance, @created_date, @last_modified_date)
+RETURNING *;
 
 -- name: GetBalance :one
 SELECT balance FROM accounts WHERE account_id = @account_id;

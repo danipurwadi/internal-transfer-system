@@ -13,9 +13,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const createAccount = `-- name: CreateAccount :exec
+const createAccount = `-- name: CreateAccount :one
 INSERT INTO accounts (account_id, balance, created_date, last_modified_date)
 VALUES ($1, $2, $3, $4)
+RETURNING account_id, balance, created_date, last_modified_date
 `
 
 type CreateAccountParams struct {
@@ -25,14 +26,21 @@ type CreateAccountParams struct {
 	LastModifiedDate time.Time       `json:"lastModifiedDate"`
 }
 
-func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {
-	_, err := q.db.Exec(ctx, createAccount,
+func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
+	row := q.db.QueryRow(ctx, createAccount,
 		arg.AccountID,
 		arg.Balance,
 		arg.CreatedDate,
 		arg.LastModifiedDate,
 	)
-	return err
+	var i Account
+	err := row.Scan(
+		&i.AccountID,
+		&i.Balance,
+		&i.CreatedDate,
+		&i.LastModifiedDate,
+	)
+	return i, err
 }
 
 const creditAccount = `-- name: CreditAccount :execresult

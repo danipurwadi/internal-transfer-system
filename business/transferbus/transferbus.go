@@ -33,24 +33,12 @@ func New(store transferdb.TxQuerier) *Bus {
 	}
 }
 
-func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error {
-	// tx, err := b.store.GetTx(ctx)
-	// if err != nil {
-	// 	slog.Error("error getting transaction")
-	// 	return customerror.WrapError(err, fmt.Errorf("error initiating db transaction to sync filemetadata [robotEncodingId: %s]", request.RobotEncodingId))
-	// }
-	// dbtx := b.store.WithTx(tx)
-	// defer func() {
-	// 	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-	// 		slog.Warn("error rolling back db transaction for syncing file metadata", "robotEncodingId", request.RobotEncodingId, "err", err)
-	// 	}
-	// }()
-
+func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, error) {
 	if account.InitialBalance.IsNegative() {
-		return ErrNegativeBalance
+		return Account{}, ErrNegativeBalance
 	}
 
-	err := b.store.CreateAccount(ctx, transferdbgen.CreateAccountParams{
+	acc, err := b.store.CreateAccount(ctx, transferdbgen.CreateAccountParams{
 		AccountID:        account.AccountId,
 		Balance:          account.InitialBalance,
 		CreatedDate:      time.Now(),
@@ -60,9 +48,9 @@ func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error 
 	if err != nil {
 		var pgError *pgconn.PgError
 		if errors.As(err, &pgError) && pgError.Code == DuplicateKeyViolatesUniqueConstraintCode {
-			return ErrAccAlreadyExist
+			return Account{}, ErrAccAlreadyExist
 		}
-		return fmt.Errorf("create: %w", err)
+		return Account{}, fmt.Errorf("create: %w", err)
 	}
 
 	err = b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
@@ -72,10 +60,10 @@ func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error 
 	})
 
 	if err != nil {
-		return fmt.Errorf("create transaction: %w", err)
+		return Account{}, fmt.Errorf("create transaction: %w", err)
 	}
 
-	return nil
+	return fromDbAccount(acc), nil
 }
 
 func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) error {
