@@ -13,13 +13,14 @@ func TestNewAccounts(n int) []NewAccount {
 	newUsrs := make([]NewAccount, n)
 
 	idx := rand.Int63n(10000)
-	balance := rand.Float64() * 100
+	balance := rand.Int63n(100)
+	diff := int64(10) // determines the balance difference between acc[i] and acc[i-1]
 	for i := range n {
 		idx++
 
 		nu := NewAccount{
 			AccountId:      idx,
-			InitialBalance: decimal.NewFromFloat(balance),
+			InitialBalance: decimal.NewFromInt(balance + diff*idx),
 		}
 
 		newUsrs[i] = nu

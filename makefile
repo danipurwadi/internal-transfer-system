@@ -25,6 +25,8 @@ exit:
 	@GOPATH=$(GOPATH_ARG) docker compose -f zarf/docker/docker-compose.yml \
 		-p internal-transfer-system down -v
 
+test:
+	@GOPATH=$(GOPATH_ARG) go test  -coverprofile cover.out `go list ./... | grep -v mocks | grep -v db/gen`
 # ==============================================================================
 stats:
 	open -a "Google Chrome" http://localhost:8090/debug/statsviz 

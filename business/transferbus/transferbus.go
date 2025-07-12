@@ -14,6 +14,7 @@ import (
 
 const (
 	DuplicateKeyViolatesUniqueConstraintCode = "23505"
+	ViolatesForeignKeyConstraint             = "23503"
 )
 
 var (
@@ -81,12 +82,17 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	}
 
 	// if Debit was successful, credit the destination account
-	_, err = b.store.CreditAccount(ctx, transferdbgen.CreditAccountParams{
+	creditResult, err := b.store.CreditAccount(ctx, transferdbgen.CreditAccountParams{
 		Amount:    transaction.Amount,
 		AccountID: transaction.DestinationAccountId,
 	})
 	if err != nil {
 		return fmt.Errorf("credit account: %w", err)
+	}
+
+	// if no rows is updated, means credit account is not found
+	if creditResult.RowsAffected() == 0 {
+		return ErrAccNotFound
 	}
 
 	// Record Credit Transaction
