@@ -17,9 +17,10 @@ const (
 )
 
 var (
-	ErrAccNotFound     = errors.New("account not found")
-	ErrAccAlreadyExist = errors.New("account already exist")
-	ErrNegativeBalance = errors.New("negative balance")
+	ErrAccNotFound       = errors.New("account not found")
+	ErrAccAlreadyExist   = errors.New("account already exist")
+	ErrNegativeBalance   = errors.New("negative balance")
+	ErrInsufficientFunds = errors.New("insufficient funds")
 )
 
 type Bus struct {
@@ -39,6 +40,7 @@ func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error 
 
 	err := b.store.CreateAccount(ctx, transferdbgen.CreateAccountParams{
 		AccountID:        account.AccountId,
+		Balance:          account.InitialBalance,
 		CreatedDate:      time.Now(),
 		LastModifiedDate: time.Now(),
 	})
@@ -65,7 +67,30 @@ func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error 
 }
 
 func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) error {
-	err := b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
+	debitResult, err := b.store.DebitAccount(ctx, transferdbgen.DebitAccountParams{
+		Amount:    transaction.Amount,
+		AccountID: transaction.SourceAccountId,
+	})
+	if err != nil {
+		return fmt.Errorf("debit account: %w", err)
+	}
+
+	// if no rows is updated, balance was too low
+	if debitResult.RowsAffected() == 0 {
+		return ErrInsufficientFunds
+	}
+
+	// if Debit was successful, credit the destination account
+	_, err = b.store.CreditAccount(ctx, transferdbgen.CreditAccountParams{
+		Amount:    transaction.Amount,
+		AccountID: transaction.DestinationAccountId,
+	})
+	if err != nil {
+		return fmt.Errorf("credit account: %w", err)
+	}
+
+	// Record Credit Transaction
+	err = b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
 		AccountID:   transaction.SourceAccountId,
 		Amount:      transaction.Amount.Neg(),
 		CreatedDate: time.Now(),
@@ -75,6 +100,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 		return fmt.Errorf("create transaction: %w", err)
 	}
 
+	// Record Debit Transaction
 	err = b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
 		AccountID:   transaction.DestinationAccountId,
 		Amount:      transaction.Amount,
@@ -90,7 +116,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 
 func (b *Bus) GetBalance(ctx context.Context, accountId int64) (AccountBalance, error) {
 	// check that account exist in the first place
-	_, err := b.store.GetAccount(ctx, accountId)
+	account, err := b.store.GetAccount(ctx, accountId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return AccountBalance{}, ErrAccNotFound
@@ -98,14 +124,9 @@ func (b *Bus) GetBalance(ctx context.Context, accountId int64) (AccountBalance, 
 		return AccountBalance{}, fmt.Errorf("get account: %d: %w", accountId, err)
 	}
 
-	balance, err := b.store.GetBalance(ctx, accountId)
-	if err != nil {
-		return AccountBalance{}, fmt.Errorf("get balance: %d: %w", accountId, err)
-	}
-
 	resp := AccountBalance{
 		AccountId: accountId,
-		Balance:   balance,
+		Balance:   account.Balance,
 	}
 	return resp, nil
 }

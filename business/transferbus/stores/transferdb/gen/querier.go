@@ -7,12 +7,15 @@ package transferdbgen
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/shopspring/decimal"
 )
 
 type Querier interface {
 	CreateAccount(ctx context.Context, arg CreateAccountParams) error
 	CreateTransaction(ctx context.Context, arg CreateTransactionParams) error
+	CreditAccount(ctx context.Context, arg CreditAccountParams) (pgconn.CommandTag, error)
+	DebitAccount(ctx context.Context, arg DebitAccountParams) (pgconn.CommandTag, error)
 	GetAccount(ctx context.Context, accountID int64) (Account, error)
 	GetAccounts(ctx context.Context, accountIds []int64) ([]Account, error)
 	GetBalance(ctx context.Context, accountID int64) (decimal.Decimal, error)

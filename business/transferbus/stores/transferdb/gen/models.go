@@ -11,9 +11,10 @@ import (
 )
 
 type Account struct {
-	AccountID        int64     `json:"accountId"`
-	CreatedDate      time.Time `json:"createdDate"`
-	LastModifiedDate time.Time `json:"lastModifiedDate"`
+	AccountID        int64           `json:"accountId"`
+	Balance          decimal.Decimal `json:"balance"`
+	CreatedDate      time.Time       `json:"createdDate"`
+	LastModifiedDate time.Time       `json:"lastModifiedDate"`
 }
 
 type Transaction struct {

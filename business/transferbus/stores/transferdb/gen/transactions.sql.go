@@ -27,15 +27,3 @@ func (q *Queries) CreateTransaction(ctx context.Context, arg CreateTransactionPa
 	_, err := q.db.Exec(ctx, createTransaction, arg.AccountID, arg.Amount, arg.CreatedDate)
 	return err
 }
-
-const getBalance = `-- name: GetBalance :one
-SELECT COALESCE(SUM(amount), 0)::NUMERIC AS balance 
-FROM transactions WHERE account_id = $1
-`
-
-func (q *Queries) GetBalance(ctx context.Context, accountID int64) (decimal.Decimal, error) {
-	row := q.db.QueryRow(ctx, getBalance, accountID)
-	var balance decimal.Decimal
-	err := row.Scan(&balance)
-	return balance, err
-}

@@ -8,37 +8,87 @@ package transferdbgen
 import (
 	"context"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/shopspring/decimal"
 )
 
 const createAccount = `-- name: CreateAccount :exec
-INSERT INTO accounts (account_id, created_date, last_modified_date)
-VALUES ($1, $2, $3)
+INSERT INTO accounts (account_id, balance, created_date, last_modified_date)
+VALUES ($1, $2, $3, $4)
 `
 
 type CreateAccountParams struct {
-	AccountID        int64     `json:"accountId"`
-	CreatedDate      time.Time `json:"createdDate"`
-	LastModifiedDate time.Time `json:"lastModifiedDate"`
+	AccountID        int64           `json:"accountId"`
+	Balance          decimal.Decimal `json:"balance"`
+	CreatedDate      time.Time       `json:"createdDate"`
+	LastModifiedDate time.Time       `json:"lastModifiedDate"`
 }
 
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) error {
-	_, err := q.db.Exec(ctx, createAccount, arg.AccountID, arg.CreatedDate, arg.LastModifiedDate)
+	_, err := q.db.Exec(ctx, createAccount,
+		arg.AccountID,
+		arg.Balance,
+		arg.CreatedDate,
+		arg.LastModifiedDate,
+	)
 	return err
 }
 
+const creditAccount = `-- name: CreditAccount :execresult
+UPDATE accounts
+SET
+    balance = balance + $1,
+    last_modified_date = NOW()
+WHERE
+    account_id = $2
+`
+
+type CreditAccountParams struct {
+	Amount    decimal.Decimal `json:"amount"`
+	AccountID int64           `json:"accountId"`
+}
+
+func (q *Queries) CreditAccount(ctx context.Context, arg CreditAccountParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, creditAccount, arg.Amount, arg.AccountID)
+}
+
+const debitAccount = `-- name: DebitAccount :execresult
+UPDATE accounts
+SET
+    balance = balance - $1,
+    last_modified_date = NOW()
+WHERE
+    account_id = $2 AND balance >= $1
+`
+
+type DebitAccountParams struct {
+	Amount    decimal.Decimal `json:"amount"`
+	AccountID int64           `json:"accountId"`
+}
+
+func (q *Queries) DebitAccount(ctx context.Context, arg DebitAccountParams) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, debitAccount, arg.Amount, arg.AccountID)
+}
+
 const getAccount = `-- name: GetAccount :one
-SELECT account_id, created_date, last_modified_date FROM accounts WHERE account_id = $1
+SELECT account_id, balance, created_date, last_modified_date FROM accounts WHERE account_id = $1
 `
 
 func (q *Queries) GetAccount(ctx context.Context, accountID int64) (Account, error) {
 	row := q.db.QueryRow(ctx, getAccount, accountID)
 	var i Account
-	err := row.Scan(&i.AccountID, &i.CreatedDate, &i.LastModifiedDate)
+	err := row.Scan(
+		&i.AccountID,
+		&i.Balance,
+		&i.CreatedDate,
+		&i.LastModifiedDate,
+	)
 	return i, err
 }
 
 const getAccounts = `-- name: GetAccounts :many
-SELECT account_id, created_date, last_modified_date FROM accounts where account_id = any($1::bigint[])
+SELECT account_id, balance, created_date, last_modified_date FROM accounts where account_id = any($1::bigint[])
 `
 
 func (q *Queries) GetAccounts(ctx context.Context, accountIds []int64) ([]Account, error) {
@@ -50,7 +100,12 @@ func (q *Queries) GetAccounts(ctx context.Context, accountIds []int64) ([]Accoun
 	var items []Account
 	for rows.Next() {
 		var i Account
-		if err := rows.Scan(&i.AccountID, &i.CreatedDate, &i.LastModifiedDate); err != nil {
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Balance,
+			&i.CreatedDate,
+			&i.LastModifiedDate,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -59,4 +114,15 @@ func (q *Queries) GetAccounts(ctx context.Context, accountIds []int64) ([]Accoun
 		return nil, err
 	}
 	return items, nil
+}
+
+const getBalance = `-- name: GetBalance :one
+SELECT balance FROM accounts WHERE account_id = $1
+`
+
+func (q *Queries) GetBalance(ctx context.Context, accountID int64) (decimal.Decimal, error) {
+	row := q.db.QueryRow(ctx, getBalance, accountID)
+	var balance decimal.Decimal
+	err := row.Scan(&balance)
+	return balance, err
 }
