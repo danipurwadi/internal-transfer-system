@@ -16,13 +16,18 @@ func Respond(ctx context.Context, w http.ResponseWriter, data any, statusCode in
 		return nil
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	// If there is nothing to marshal then set status code and return.
+	if data == nil {
+		return nil
+	}
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("web.respond: marshal: %w", err)
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
 
 	if _, err := w.Write(jsonData); err != nil {
 		return fmt.Errorf("web.respond: write: %w", err)

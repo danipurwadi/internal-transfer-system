@@ -19,7 +19,6 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 type Logger func(ctx context.Context, msg string, v ...any)
 
 type Client struct {
-	// log Logger
 	*http.ServeMux
 	shutdown chan os.Signal
 	mw       []MidHandler
@@ -32,7 +31,6 @@ func NewClient(shutdown chan os.Signal, mw ...MidHandler) *Client {
 		ServeMux: mux,
 		shutdown: shutdown,
 		mw:       mw,
-		// log:      log,
 	}
 }
 
