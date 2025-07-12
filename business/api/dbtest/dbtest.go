@@ -5,24 +5,22 @@ import (
 	"context"
 	"fmt"
 
-	// "log"
 	"math/rand"
 	"testing"
 	"time"
 
-	"github.com/danipurwadi/internal-transfer-system/business/api/postgresdb"
+	"github.com/danipurwadi/internal-transfer-system/business/api/db"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb"
 	"github.com/danipurwadi/internal-transfer-system/foundation/docker"
 	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
 	"github.com/danipurwadi/internal-transfer-system/foundation/web"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // StartDB starts a database instance.
 func StartDB() (*docker.Container, error) {
-	image := "postgres:16.2"
+	image := "postgres:14.8"
 	port := "5432"
 	dockerArgs := []string{"-e", "POSTGRES_PASSWORD=postgres"}
 	appArgs := []string{"-c", "log_statement=all"}
@@ -78,13 +76,14 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	dbM := postgresdb.New(postgresdb.Config{
+	dbMConfig := db.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		HostPort:   c.HostPort,
 		Database:   "postgres",
 		DisableTLS: true,
-	})
+	}
+	dbM := db.New(dbMConfig)
 	// -------------------------------------------------------------------------
 
 	const letterBytes = "abcdefghijklmnopqrstuvwxyz"
@@ -94,27 +93,24 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	}
 	dbName := string(b)
 
-	// If it doesn't exist, create it
-	_, err := dbM.Exec(ctx, fmt.Sprintf("CREATE DATABASE %s", dbName)) // Note: Sprintf is used here for simplicity. Be cautious with dynamic db names.
+	err := db.InitDatabase(ctx, dbMConfig, dbName)
 	if err != nil {
-		// It's possible another instance created it in the meantime.
-		// We can check for a "duplicate database" error.
-		if pgErr, ok := err.(*pgconn.PgError); !ok || pgErr.Code != "42P04" { // 42P04 is duplicate_database
-			t.Fatalf("creating database %s: %v", dbName, err)
-		}
+		t.Fatalf("creating database %s: %v", dbName, err)
 	}
-
 	dbM.Close()
 
 	// -------------------------------------------------------------------------
 
-	db := postgresdb.New(postgresdb.Config{
+	dbConfig := db.Config{
 		User:       "postgres",
 		Password:   "postgres",
 		HostPort:   c.HostPort,
 		Database:   dbName,
 		DisableTLS: true,
-	})
+	}
+
+	testDb := db.New(dbConfig)
+	db.Migrate(dbConfig)
 
 	// -------------------------------------------------------------------------
 
@@ -128,7 +124,7 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	teardown := func() {
 		t.Helper()
 
-		db.Close()
+		testDb.Close()
 
 		fmt.Printf("******************** LOGS (%s) ********************\n", testName)
 		fmt.Print(buf.String())
@@ -136,9 +132,9 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	}
 
 	return &Database{
-		DB:        db,
+		DB:        testDb,
 		Log:       log,
-		BusDomain: newBusDomains(db),
+		BusDomain: newBusDomains(testDb),
 		Teardown:  teardown,
 	}
 }

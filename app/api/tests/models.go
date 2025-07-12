@@ -2,14 +2,14 @@ package apptest
 
 import "github.com/danipurwadi/internal-transfer-system/business/api/dbtest"
 
-// Acount extends the dbtest user for api test support.
-type Account struct {
+// User extends the dbtest user for api test support.
+type User struct {
 	dbtest.Account
 }
 
 // SeedData represents users for api tests.
 type SeedData struct {
-	Accounts []Account
+	Users []User
 }
 
 // Table represent fields needed for running an api test.

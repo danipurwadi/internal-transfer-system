@@ -15,7 +15,7 @@ import (
 	"github.com/danipurwadi/internal-transfer-system/app/debug"
 	"github.com/danipurwadi/internal-transfer-system/app/middleware"
 	"github.com/danipurwadi/internal-transfer-system/app/transferapp"
-	"github.com/danipurwadi/internal-transfer-system/business/api/postgresdb"
+	"github.com/danipurwadi/internal-transfer-system/business/api/db"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb"
 	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
@@ -109,13 +109,16 @@ func run(ctx context.Context, log *logger.Logger) error {
 
 	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.Host)
 
-	dbConn := postgresdb.New(postgresdb.Config{
+	dbConfig := db.Config{
 		User:       cfg.DB.User,
 		Password:   cfg.DB.Password,
 		HostPort:   fmt.Sprintf("%s:%d", cfg.DB.Host, cfg.DB.Port),
 		Database:   cfg.DB.Name,
 		DisableTLS: cfg.DB.DisableTLS,
-	})
+	}
+
+	dbConn := db.New(dbConfig)
+	db.Migrate(dbConfig)
 
 	dbClient := transferdb.NewTxQueries(dbConn)
 

@@ -22,7 +22,6 @@ func StartContainer(image string, port string, dockerArgs []string, appArgs []st
 	arg = append(arg, dockerArgs...)
 	arg = append(arg, image)
 	arg = append(arg, appArgs...)
-
 	var out bytes.Buffer
 	cmd := exec.Command("docker", arg...)
 	cmd.Stdout = &out
@@ -31,7 +30,7 @@ func StartContainer(image string, port string, dockerArgs []string, appArgs []st
 	}
 
 	id := out.String()[:12]
-	hostIP, hostPort, err := extractIPPort(id, port)
+	_, hostPort, err := extractIPPort(id, port)
 	if err != nil {
 		StopContainer(id)
 		return nil, fmt.Errorf("could not extract ip/port: %w", err)
@@ -39,8 +38,9 @@ func StartContainer(image string, port string, dockerArgs []string, appArgs []st
 
 	c := Container{
 		ID:       id,
-		HostPort: net.JoinHostPort(hostIP, hostPort),
+		HostPort: net.JoinHostPort("0.0.0.0", hostPort),
 	}
+
 
 	return &c, nil
 }
