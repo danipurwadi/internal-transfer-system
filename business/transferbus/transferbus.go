@@ -34,6 +34,18 @@ func New(store transferdb.TxQuerier) *Bus {
 }
 
 func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error {
+	// tx, err := b.store.GetTx(ctx)
+	// if err != nil {
+	// 	slog.Error("error getting transaction")
+	// 	return customerror.WrapError(err, fmt.Errorf("error initiating db transaction to sync filemetadata [robotEncodingId: %s]", request.RobotEncodingId))
+	// }
+	// dbtx := b.store.WithTx(tx)
+	// defer func() {
+	// 	if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+	// 		slog.Warn("error rolling back db transaction for syncing file metadata", "robotEncodingId", request.RobotEncodingId, "err", err)
+	// 	}
+	// }()
+
 	if account.InitialBalance.IsNegative() {
 		return ErrNegativeBalance
 	}

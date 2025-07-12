@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"slices"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -15,11 +14,11 @@ import (
 )
 
 type Config struct {
-	User     string
-	Password string
-	Host     string
-	Port     int
-	Database string
+	User       string
+	Password   string
+	HostPort   string
+	Database   string
+	DisableTLS bool
 }
 
 func New(config Config) *pgxpool.Pool {
@@ -36,32 +35,24 @@ func New(config Config) *pgxpool.Pool {
 }
 
 func buildConnectionString(config Config) string {
-	format := "postgresql://%s:%s@%s:%d/%s"
+	format := "postgresql://%s:%s@%s/%s"
 
 	// auto-configure for local dockerized instance
-	if config.Password == "password" {
-		format = "postgresql://%s:%s@%s:%d/%s?sslmode=disable"
+	if config.DisableTLS {
+		format = "postgresql://%s:%s@%s/%s?sslmode=disable"
 	}
 
 	return fmt.Sprintf(
 		format,
 		config.User,
 		url.QueryEscape(config.Password),
-		config.Host,
-		config.Port,
+		config.HostPort,
 		config.Database,
 	)
 }
 
 func migration(config Config) error {
-	localDbHosts := []string{"localhost", "127.0.0.1", "postgresdb", "host.docker.internal"}
-
-	var migrationSourceUrl string
-	if slices.Contains(localDbHosts, config.Host) {
-		migrationSourceUrl = "file://business/api/migration"
-	} else {
-		migrationSourceUrl = "file:///business/api/migration"
-	}
+	migrationSourceUrl := "file://business/api/migration"
 
 	dbUrl := buildConnectionString(config)
 	m, err := migrate.New(migrationSourceUrl, dbUrl)

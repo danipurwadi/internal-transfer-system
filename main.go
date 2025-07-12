@@ -72,11 +72,12 @@ func run(ctx context.Context, log *logger.Logger) error {
 			CORSAllowedOrigins []string      `conf:"default:*"`
 		}
 		DB struct {
-			User     string `conf:"default:postgres"`
-			Password string `conf:"default:password,mask"`
-			Host     string `conf:"default:host.docker.internal"`
-			Port     int    `conf:"default:5432"`
-			Name     string `conf:"default:transfer"`
+			User       string `conf:"default:postgres"`
+			Password   string `conf:"default:password,mask"`
+			Host       string `conf:"default:host.docker.internal"`
+			Port       int    `conf:"default:5432"`
+			Name       string `conf:"default:transfer"`
+			DisableTLS bool   `conf:"default:true"`
 		}
 	}{
 		Version: conf.Version{
@@ -109,11 +110,11 @@ func run(ctx context.Context, log *logger.Logger) error {
 	log.Info(ctx, "startup", "status", "initializing database support", "hostport", cfg.DB.Host)
 
 	dbConn := postgresdb.New(postgresdb.Config{
-		User:     cfg.DB.User,
-		Password: cfg.DB.Password,
-		Host:     cfg.DB.Host,
-		Port:     cfg.DB.Port,
-		Database: cfg.DB.Name,
+		User:       cfg.DB.User,
+		Password:   cfg.DB.Password,
+		HostPort:   fmt.Sprintf("%s:%d", cfg.DB.Host, cfg.DB.Port),
+		Database:   cfg.DB.Name,
+		DisableTLS: cfg.DB.DisableTLS,
 	})
 
 	dbClient := transferdb.NewTxQueries(dbConn)
