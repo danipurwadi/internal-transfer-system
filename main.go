@@ -131,7 +131,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	// initialise business layer
-	transferBus := transferbus.New(dbClient)
+	transferBus := transferbus.New(dbClient, log)
 
 	// initialise app layer
 	transferApp := transferapp.NewApp(transferBus)

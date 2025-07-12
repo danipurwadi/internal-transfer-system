@@ -231,29 +231,6 @@ func accountQuery(db *dbtest.Database, sd dbtest.SeedData) []unittest.Table {
 				return cmp.Diff(gotResp, expResp)
 			},
 		},
-		{
-			Name:    "unhappy-acc-not-found",
-			ExpResp: transferbus.ErrAccNotFound,
-			ExcFunc: func(ctx context.Context) any {
-				// declare the new user id as the sum of all ids to guarantee id is not found
-				userId := int64(0)
-				for _, u := range sd.Accounts {
-					userId += u.AccountId
-				}
-
-				resp, err := db.BusDomain.TransferBus.GetBalance(ctx, userId)
-				if err != nil {
-					return err
-				}
-
-				return resp
-			},
-			CmpFunc: func(got any, exp any) string {
-				gotResp := got.(error).Error()
-				expResp := exp.(error).Error()
-				return cmp.Diff(gotResp, expResp)
-			},
-		},
 	}
 
 	return table

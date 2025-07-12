@@ -8,6 +8,7 @@ import (
 
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb"
 	transferdbgen "github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb/gen"
+	"github.com/danipurwadi/internal-transfer-system/foundation/logger"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -26,11 +27,13 @@ var (
 )
 
 type Bus struct {
+	log   *logger.Logger
 	store transferdb.TxQuerier
 }
 
-func New(store transferdb.TxQuerier) *Bus {
+func New(store transferdb.TxQuerier, log *logger.Logger) *Bus {
 	return &Bus{
+		log:   log,
 		store: store,
 	}
 }
@@ -39,8 +42,18 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 	if account.InitialBalance.IsNegative() {
 		return Account{}, ErrNegativeBalance
 	}
+	tx, err := b.store.GetTx(ctx)
+	if err != nil {
+		return Account{}, fmt.Errorf("get transaction: %w", err)
+	}
+	dbtx := b.store.WithTx(tx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			b.log.Error(ctx, "rollback failed", "err", err)
+		}
+	}()
 
-	acc, err := b.store.CreateAccount(ctx, transferdbgen.CreateAccountParams{
+	acc, err := dbtx.CreateAccount(ctx, transferdbgen.CreateAccountParams{
 		AccountID:        account.AccountId,
 		Balance:          account.InitialBalance,
 		CreatedDate:      time.Now(),
@@ -55,7 +68,7 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 		return Account{}, fmt.Errorf("create: %w", err)
 	}
 
-	err = b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
+	err = dbtx.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
 		AccountID:   account.AccountId,
 		Amount:      account.InitialBalance,
 		CreatedDate: time.Now(),
@@ -65,10 +78,24 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 		return Account{}, fmt.Errorf("create transaction: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return Account{}, fmt.Errorf("commit transaction: %w", err)
+	}
+
 	return fromDbAccount(acc), nil
 }
 
 func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) error {
+	tx, err := b.store.GetTx(ctx)
+	if err != nil {
+		return fmt.Errorf("get transaction: %w", err)
+	}
+	dbtx := b.store.WithTx(tx)
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			b.log.Error(ctx, "rollback failed", "err", err)
+		}
+	}()
 	if transaction.Amount.IsNegative() {
 		return ErrNegativeBalance
 	}
@@ -77,7 +104,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	}
 
 	// check that both accounts exist
-	accounts, err := b.store.GetAccounts(ctx, []int64{transaction.SourceAccountId, transaction.DestinationAccountId})
+	accounts, err := dbtx.GetAccounts(ctx, []int64{transaction.SourceAccountId, transaction.DestinationAccountId})
 	if err != nil {
 		return fmt.Errorf("get accounts: %w", err)
 	}
@@ -85,7 +112,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 		return ErrAccNotFound
 	}
 
-	debitResult, err := b.store.DebitAccount(ctx, transferdbgen.DebitAccountParams{
+	debitResult, err := dbtx.DebitAccount(ctx, transferdbgen.DebitAccountParams{
 		Amount:    transaction.Amount,
 		AccountID: transaction.SourceAccountId,
 	})
@@ -99,7 +126,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	}
 
 	// if Debit was successful, credit the destination account
-	_, err = b.store.CreditAccount(ctx, transferdbgen.CreditAccountParams{
+	_, err = dbtx.CreditAccount(ctx, transferdbgen.CreditAccountParams{
 		Amount:    transaction.Amount,
 		AccountID: transaction.DestinationAccountId,
 	})
@@ -108,7 +135,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	}
 
 	// Record Credit Transaction
-	err = b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
+	err = dbtx.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
 		AccountID:   transaction.SourceAccountId,
 		Amount:      transaction.Amount.Neg(),
 		CreatedDate: time.Now(),
@@ -119,7 +146,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	}
 
 	// Record Debit Transaction
-	err = b.store.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
+	err = dbtx.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
 		AccountID:   transaction.DestinationAccountId,
 		Amount:      transaction.Amount,
 		CreatedDate: time.Now(),
@@ -129,6 +156,9 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 		return fmt.Errorf("create transaction: %w", err)
 	}
 
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
 	return nil
 }
 

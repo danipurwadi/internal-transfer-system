@@ -44,7 +44,7 @@ func startTest(t *testing.T, testName string) *apptest.Test {
 	dbClient := transferdb.NewTxQueries(db.DB)
 	// -------------------------------------------------------------------------
 	// initialise business layer
-	transferBus := transferbus.New(dbClient)
+	transferBus := transferbus.New(dbClient, db.Log)
 
 	// initialise app layer
 	transferApp := transferapp.NewApp(transferBus)

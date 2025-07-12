@@ -50,9 +50,9 @@ type BusDomain struct {
 	TransferBus *transferbus.Bus
 }
 
-func newBusDomains(db *pgxpool.Pool) BusDomain {
+func newBusDomains(db *pgxpool.Pool, log *logger.Logger) BusDomain {
 	dbClient := transferdb.NewTxQueries(db)
-	transferBus := transferbus.New(dbClient)
+	transferBus := transferbus.New(dbClient, log)
 
 	return BusDomain{
 		TransferBus: transferBus,
@@ -134,7 +134,7 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	return &Database{
 		DB:        testDb,
 		Log:       log,
-		BusDomain: newBusDomains(testDb),
+		BusDomain: newBusDomains(testDb, log),
 		Teardown:  teardown,
 	}
 }
