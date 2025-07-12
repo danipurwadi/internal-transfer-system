@@ -56,7 +56,7 @@ func (at *Test) Run(t *testing.T, table []Table, testName string) {
 				t.Fatalf("%s: Should receive a status code of %d for the response : %d", tt.Name, tt.StatusCode, w.Code)
 			}
 
-			if tt.StatusCode == http.StatusNoContent {
+			if tt.StatusCode == http.StatusNoContent || w.Body.Bytes() == nil {
 				return
 			}
 

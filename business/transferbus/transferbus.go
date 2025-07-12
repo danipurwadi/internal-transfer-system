@@ -22,6 +22,7 @@ var (
 	ErrAccAlreadyExist   = errors.New("account already exist")
 	ErrNegativeBalance   = errors.New("negative balance")
 	ErrInsufficientFunds = errors.New("insufficient funds")
+	ErrSameAccount       = errors.New("source and destination account cannot be the same")
 )
 
 type Bus struct {
@@ -68,6 +69,22 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 }
 
 func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) error {
+	if transaction.Amount.IsNegative() {
+		return ErrNegativeBalance
+	}
+	if transaction.SourceAccountId == transaction.DestinationAccountId {
+		return ErrSameAccount
+	}
+
+	// check that both accounts exist
+	accounts, err := b.store.GetAccounts(ctx, []int64{transaction.SourceAccountId, transaction.DestinationAccountId})
+	if err != nil {
+		return fmt.Errorf("get accounts: %w", err)
+	}
+	if len(accounts) != 2 {
+		return ErrAccNotFound
+	}
+
 	debitResult, err := b.store.DebitAccount(ctx, transferdbgen.DebitAccountParams{
 		Amount:    transaction.Amount,
 		AccountID: transaction.SourceAccountId,
@@ -82,17 +99,12 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	}
 
 	// if Debit was successful, credit the destination account
-	creditResult, err := b.store.CreditAccount(ctx, transferdbgen.CreditAccountParams{
+	_, err = b.store.CreditAccount(ctx, transferdbgen.CreditAccountParams{
 		Amount:    transaction.Amount,
 		AccountID: transaction.DestinationAccountId,
 	})
 	if err != nil {
 		return fmt.Errorf("credit account: %w", err)
-	}
-
-	// if no rows is updated, means credit account is not found
-	if creditResult.RowsAffected() == 0 {
-		return ErrAccNotFound
 	}
 
 	// Record Credit Transaction

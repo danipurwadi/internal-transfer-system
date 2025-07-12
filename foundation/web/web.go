@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,16 +19,14 @@ type Logger func(ctx context.Context, msg string, v ...any)
 
 type Client struct {
 	*http.ServeMux
-	shutdown chan os.Signal
-	mw       []MidHandler
+	mw []MidHandler
 }
 
-func NewClient(shutdown chan os.Signal, mw ...MidHandler) *Client {
+func NewClient(mw ...MidHandler) *Client {
 	mux := http.NewServeMux()
 
 	return &Client{
 		ServeMux: mux,
-		shutdown: shutdown,
 		mw:       mw,
 	}
 }

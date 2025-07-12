@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/ardanlabs/conf/v3"
-	"github.com/danipurwadi/internal-transfer-system/app/debug"
-	"github.com/danipurwadi/internal-transfer-system/app/middleware"
+	"github.com/danipurwadi/internal-transfer-system/app/api/debug"
+	"github.com/danipurwadi/internal-transfer-system/app/api/middleware"
 	"github.com/danipurwadi/internal-transfer-system/app/transferapp"
 	"github.com/danipurwadi/internal-transfer-system/business/api/db"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
@@ -137,7 +137,7 @@ func run(ctx context.Context, log *logger.Logger) error {
 	transferApp := transferapp.NewApp(transferBus)
 
 	// intitialise and register routes to the client
-	webClient := web.NewClient(shutdown, middleware.Logger(log), middleware.Errors(log))
+	webClient := web.NewClient(middleware.Logger(log), middleware.Errors(log))
 	transferApp.Routes(webClient)
 
 	api := http.Server{

@@ -12,7 +12,7 @@ import (
 func TestNewAccounts(n int) []NewAccount {
 	newUsrs := make([]NewAccount, n)
 
-	idx := rand.Int63n(10000)
+	idx := rand.Int63n(1000) + 10 // range of auto generated number are between 10 - 1010
 	balance := rand.Int63n(100)
 	diff := int64(10) // determines the balance difference between acc[i] and acc[i-1]
 	for i := range n {

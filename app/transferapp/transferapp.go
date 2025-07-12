@@ -100,6 +100,18 @@ func (a *App) createTransaction(ctx context.Context, w http.ResponseWriter, r *h
 
 	err = a.transferbus.CreateTransaction(ctx, t)
 	if err != nil {
+		if errors.Is(err, transferbus.ErrAccNotFound) {
+			return customerror.New(customerror.NotFound, err)
+		}
+		if errors.Is(err, transferbus.ErrInsufficientFunds) {
+			return customerror.New(customerror.FailedPrecondition, err)
+		}
+		if errors.Is(err, transferbus.ErrSameAccount) {
+			return customerror.New(customerror.InvalidArgument, err)
+		}
+		if errors.Is(err, transferbus.ErrNegativeBalance) {
+			return customerror.New(customerror.InvalidArgument, err)
+		}
 		return customerror.New(customerror.Internal, err)
 	}
 

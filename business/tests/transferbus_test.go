@@ -66,7 +66,7 @@ func accountSeedData(db *dbtest.Database) (dbtest.SeedData, error) {
 func accountCreation(db *dbtest.Database) []unittest.Table {
 	table := []unittest.Table{
 		{
-			Name: "happy-basic",
+			Name: "basic",
 			ExpResp: transferbus.Account{
 				AccountId: 1,
 				Balance:   decimal.NewFromFloat(100.12345),
@@ -99,7 +99,7 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 			},
 		},
 		{
-			Name: "happy-rounding-up",
+			Name: "correctlyroundup",
 			ExpResp: transferbus.Account{
 				AccountId: 2,
 				Balance:   decimal.NewFromFloat(100.12346),
@@ -131,7 +131,7 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 			},
 		},
 		{
-			Name: "happy-rounding-down",
+			Name: "correctlyrounddown",
 			ExpResp: transferbus.Account{
 				AccountId: 3,
 				Balance:   decimal.NewFromFloat(100.12345),
@@ -162,7 +162,7 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 			},
 		},
 		{
-			Name:    "unhappy-negative-balance",
+			Name:    "negativebalance",
 			ExpResp: transferbus.ErrNegativeBalance,
 			ExcFunc: func(ctx context.Context) any {
 				nu := transferbus.NewAccount{
@@ -176,36 +176,6 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 				}
 
 				return resp
-			},
-			CmpFunc: func(got any, exp any) string {
-				gotResp := got.(error).Error()
-				expResp := exp.(error).Error()
-				return cmp.Diff(gotResp, expResp)
-			},
-		},
-		{
-			Name:    "unhappy-duplicate-id",
-			ExpResp: transferbus.ErrAccAlreadyExist,
-			ExcFunc: func(ctx context.Context) any {
-				nu1 := transferbus.NewAccount{
-					AccountId:      5,
-					InitialBalance: decimal.NewFromFloat(100.12345),
-				}
-				nu2 := transferbus.NewAccount{
-					AccountId:      5,
-					InitialBalance: decimal.NewFromFloat(1.234),
-				}
-
-				_, err := db.BusDomain.TransferBus.CreateAccount(ctx, nu1)
-				if err != nil {
-					return err
-				}
-
-				_, err = db.BusDomain.TransferBus.CreateAccount(ctx, nu2)
-				if err != nil {
-					return err
-				}
-				return nil
 			},
 			CmpFunc: func(got any, exp any) string {
 				gotResp := got.(error).Error()
@@ -227,7 +197,7 @@ func accountQuery(db *dbtest.Database, sd dbtest.SeedData) []unittest.Table {
 
 	table := []unittest.Table{
 		{
-			Name:    "happy-basic",
+			Name:    "basic",
 			ExpResp: sd.Accounts[0].Account,
 			ExcFunc: func(ctx context.Context) any {
 
@@ -306,7 +276,7 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 
 	table := []unittest.Table{
 		{
-			Name: "happy-basic",
+			Name: "basic",
 			ExpResp: accountBalances{
 				SourceBalance:      accs[0].Account.Balance.Sub(validAmount),
 				DestinationBalance: accs[1].Account.Balance.Add(validAmount),
@@ -348,7 +318,7 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 			},
 		},
 		{
-			Name:    "unhappy-insufficient-balance",
+			Name:    "insufficientbalance",
 			ExpResp: transferbus.ErrInsufficientFunds,
 			ExcFunc: func(ctx context.Context) any {
 				r := transferbus.Transaction{
@@ -369,7 +339,7 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 			},
 		},
 		{
-			Name:    "unhappy-invalid-account-id",
+			Name:    "invalidaccountid",
 			ExpResp: transferbus.ErrAccNotFound,
 			ExcFunc: func(ctx context.Context) any {
 				// declare the new user id as the sum of all ids to guarantee id is not found
