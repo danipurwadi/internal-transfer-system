@@ -2,7 +2,7 @@ version: "2"
 sql:
   - engine: "postgresql"
     queries: "business/transferbus/stores/transferdb/queries"
-    schema: "business/transferbus/stores/transferdb/schemas"
+    schema: "business/api/migration"
     gen:
       go:
         package: "transferdbgen"

@@ -23,7 +23,7 @@ stop:
 # Exit cleans up the docker-compose services using the down command.
 exit:
 	@GOPATH=$(GOPATH_ARG) docker compose -f zarf/docker/docker-compose.yml \
-		-p internal-transfer-system down
+		-p internal-transfer-system down -v
 
 # ======
 stats:

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   internal-transfer-system:
     container_name: internal-transfer-system
@@ -27,6 +25,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     volumes:
+      - ./db/init:/docker-entrypoint-initdb.d 
       - pg_data:/var/lib/postgresql/data
 
 volumes:
