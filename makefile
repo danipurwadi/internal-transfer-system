@@ -55,3 +55,5 @@ test-race: test-r lint vuln-check
 # ==============================================================================
 stats:
 	open -a "Google Chrome" http://localhost:8090/debug/statsviz 
+load-test:
+	go run zarf/scripts/loadtest/main.go
