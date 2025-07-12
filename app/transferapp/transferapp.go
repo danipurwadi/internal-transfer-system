@@ -52,6 +52,12 @@ func (a *App) createAccount(ctx context.Context, w http.ResponseWriter, r *http.
 
 	err = a.transferbus.CreateAccount(ctx, account)
 	if err != nil {
+		if errors.Is(err, transferbus.ErrAccAlreadyExist) {
+			return customerror.New(customerror.AlreadyExists, err)
+		}
+		if errors.Is(err, transferbus.ErrNegativeBalance) {
+			return customerror.New(customerror.InvalidArgument, err)
+		}
 		return customerror.New(customerror.Internal, err)
 	}
 

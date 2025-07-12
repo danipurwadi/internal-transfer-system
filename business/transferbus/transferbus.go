@@ -19,6 +19,7 @@ const (
 var (
 	ErrAccNotFound     = errors.New("account not found")
 	ErrAccAlreadyExist = errors.New("account already exist")
+	ErrNegativeBalance = errors.New("negative balance")
 )
 
 type Bus struct {
@@ -32,6 +33,10 @@ func New(store transferdb.TxQuerier) *Bus {
 }
 
 func (b *Bus) CreateAccount(ctx context.Context, account AccountCreation) error {
+	if account.InitialBalance.IsNegative() {
+		return ErrNegativeBalance
+	}
+
 	err := b.store.CreateAccount(ctx, transferdbgen.CreateAccountParams{
 		AccountID:        account.AccountId,
 		CreatedDate:      time.Now(),

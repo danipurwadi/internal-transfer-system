@@ -8,6 +8,6 @@ CREATE TABLE
 CREATE TABLE
     if not EXISTS transactions (
         account_id BIGINT NOT NULL REFERENCES accounts (account_id) ON DELETE RESTRICT,
-        amount NUMERIC(19, 4) NOT NULL,
+        amount NUMERIC(19, 5) NOT NULL,
         created_date TIMESTAMPTZ NOT NULL DEFAULT NOW ()
     );

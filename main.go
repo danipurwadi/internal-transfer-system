@@ -13,7 +13,7 @@ import (
 
 	"github.com/ardanlabs/conf/v3"
 	"github.com/danipurwadi/internal-transfer-system/app/debug"
-	"github.com/danipurwadi/internal-transfer-system/app/mux"
+	"github.com/danipurwadi/internal-transfer-system/app/middleware"
 	"github.com/danipurwadi/internal-transfer-system/app/transferapp"
 	"github.com/danipurwadi/internal-transfer-system/business/api/postgresdb"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
@@ -117,8 +117,6 @@ func run(ctx context.Context, log *logger.Logger) error {
 	})
 
 	dbClient := transferdb.NewTxQueries(dbConn)
-	transferBus := transferbus.New(dbClient)
-	transferApp := transferapp.NewApp(transferBus)
 
 	// -------------------------------------------------------------------------
 	// Start API Service
@@ -128,9 +126,19 @@ func run(ctx context.Context, log *logger.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
+	// initialise business layer
+	transferBus := transferbus.New(dbClient)
+
+	// initialise app layer
+	transferApp := transferapp.NewApp(transferBus)
+
+	// intitialise and register routes to the client
+	webClient := web.NewClient(shutdown, middleware.Logger(log), middleware.Errors(log))
+	transferApp.Routes(webClient)
+
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      mux.WebApi(log, shutdown, transferApp),
+		Handler:      webClient,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 		IdleTimeout:  cfg.Web.IdleTimeout,
