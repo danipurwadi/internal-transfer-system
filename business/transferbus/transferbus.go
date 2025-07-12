@@ -114,19 +114,15 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	return nil
 }
 
-func (b *Bus) GetBalance(ctx context.Context, accountId int64) (AccountBalance, error) {
+func (b *Bus) GetBalance(ctx context.Context, accountId int64) (Account, error) {
 	// check that account exist in the first place
 	account, err := b.store.GetAccount(ctx, accountId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return AccountBalance{}, ErrAccNotFound
+			return Account{}, ErrAccNotFound
 		}
-		return AccountBalance{}, fmt.Errorf("get account: %d: %w", accountId, err)
+		return Account{}, fmt.Errorf("get account: %d: %w", accountId, err)
 	}
 
-	resp := AccountBalance{
-		AccountId: accountId,
-		Balance:   account.Balance,
-	}
-	return resp, nil
+	return fromDbAccount(account), nil
 }

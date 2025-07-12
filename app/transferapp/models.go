@@ -14,10 +14,10 @@ type BalanceResponse struct {
 	Balance   string `json:"balance"`
 }
 
-func fromBusAccBalance(accBalance transferbus.AccountBalance) BalanceResponse {
+func fromBusAccBalance(account transferbus.Account) BalanceResponse {
 	return BalanceResponse{
-		AccountId: strconv.FormatInt(accBalance.AccountId, 10),
-		Balance:   accBalance.Balance.String(),
+		AccountId: strconv.FormatInt(account.AccountId, 10),
+		Balance:   account.Balance.String(),
 	}
 }
 

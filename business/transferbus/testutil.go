@@ -12,13 +12,14 @@ import (
 func TestNewAccounts(n int) []NewAccount {
 	newUsrs := make([]NewAccount, n)
 
-	idx := rand.Intn(10000)
-	for i := 0; i < n; i++ {
+	idx := rand.Int63n(10000)
+	balance := rand.Float64() * 100
+	for i := range n {
 		idx++
 
 		nu := NewAccount{
-			AccountId:      int64(idx),
-			InitialBalance: decimal.NewFromInt(1000), // TODO: randomise this value
+			AccountId:      idx,
+			InitialBalance: decimal.NewFromFloat(balance),
 		}
 
 		newUsrs[i] = nu

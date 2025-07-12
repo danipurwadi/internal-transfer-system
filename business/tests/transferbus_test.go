@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"sort"
 	"testing"
+	"time"
 
 	"github.com/danipurwadi/internal-transfer-system/business/api/dbtest"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
@@ -24,12 +26,13 @@ func Test_Transfer(t *testing.T) {
 		db.Teardown()
 	}()
 
-	_, err := accountSeedData(db)
+	sd, err := accountSeedData(db)
 	if err != nil {
 		t.Fatalf("Seeding error: %s", err)
 	}
 
-	unittest.Run(t, accountCreate(db), "account-create")
+	unittest.Run(t, accountCreation(db), "account-creation")
+	unittest.Run(t, accountQuery(db, sd), "account-query")
 }
 
 func accountSeedData(db *dbtest.Database) (dbtest.SeedData, error) {
@@ -59,10 +62,10 @@ func accountSeedData(db *dbtest.Database) (dbtest.SeedData, error) {
 	return sd, nil
 }
 
-func accountCreate(db *dbtest.Database) []unittest.Table {
+func accountCreation(db *dbtest.Database) []unittest.Table {
 	table := []unittest.Table{
 		{
-			Name: "basic",
+			Name: "happy-basic",
 			ExpResp: transferbus.Account{
 				AccountId: 1,
 				Balance:   decimal.NewFromFloat(100.12345),
@@ -95,7 +98,7 @@ func accountCreate(db *dbtest.Database) []unittest.Table {
 			},
 		},
 		{
-			Name: "rounding-up",
+			Name: "happy-rounding-up",
 			ExpResp: transferbus.Account{
 				AccountId: 2,
 				Balance:   decimal.NewFromFloat(100.12346),
@@ -123,12 +126,11 @@ func accountCreate(db *dbtest.Database) []unittest.Table {
 
 				expResp.CreatedDate = gotResp.CreatedDate
 				expResp.LastModifiedDate = gotResp.LastModifiedDate
-
 				return cmp.Diff(gotResp, expResp)
 			},
 		},
 		{
-			Name: "rounding-down",
+			Name: "happy-rounding-down",
 			ExpResp: transferbus.Account{
 				AccountId: 3,
 				Balance:   decimal.NewFromFloat(100.12345),
@@ -151,12 +153,133 @@ func accountCreate(db *dbtest.Database) []unittest.Table {
 				if !exists {
 					return "error occurred"
 				}
-
 				expResp := exp.(transferbus.Account)
 
 				expResp.CreatedDate = gotResp.CreatedDate
 				expResp.LastModifiedDate = gotResp.LastModifiedDate
+				return cmp.Diff(gotResp, expResp)
+			},
+		},
+		{
+			Name:    "unhappy-negative-balance",
+			ExpResp: transferbus.ErrNegativeBalance,
+			ExcFunc: func(ctx context.Context) any {
+				nu := transferbus.NewAccount{
+					AccountId:      4,
+					InitialBalance: decimal.NewFromFloat(-100.12345),
+				}
 
+				resp, err := db.BusDomain.TransferBus.CreateAccount(ctx, nu)
+				if err != nil {
+					return err
+				}
+
+				return resp
+			},
+			CmpFunc: func(got any, exp any) string {
+				gotResp := got.(error).Error()
+				expResp := exp.(error).Error()
+				return cmp.Diff(gotResp, expResp)
+			},
+		},
+		{
+			Name:    "unhappy-duplicate-id",
+			ExpResp: transferbus.ErrAccAlreadyExist,
+			ExcFunc: func(ctx context.Context) any {
+				nu1 := transferbus.NewAccount{
+					AccountId:      5,
+					InitialBalance: decimal.NewFromFloat(100.12345),
+				}
+				nu2 := transferbus.NewAccount{
+					AccountId:      5,
+					InitialBalance: decimal.NewFromFloat(1.234),
+				}
+
+				_, err := db.BusDomain.TransferBus.CreateAccount(ctx, nu1)
+				if err != nil {
+					return err
+				}
+
+				_, err = db.BusDomain.TransferBus.CreateAccount(ctx, nu2)
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+			CmpFunc: func(got any, exp any) string {
+				gotResp := got.(error).Error()
+				expResp := exp.(error).Error()
+				return cmp.Diff(gotResp, expResp)
+			},
+		},
+	}
+
+	return table
+}
+
+func accountQuery(db *dbtest.Database, sd dbtest.SeedData) []unittest.Table {
+	usrs := sd.Accounts
+
+	sort.Slice(usrs, func(i, j int) bool {
+		return usrs[i].AccountId <= usrs[j].AccountId
+	})
+
+	table := []unittest.Table{
+		{
+			Name:    "happy-basic",
+			ExpResp: sd.Accounts[0].Account,
+			ExcFunc: func(ctx context.Context) any {
+
+				resp, err := db.BusDomain.TransferBus.GetBalance(ctx, sd.Accounts[0].AccountId)
+				if err != nil {
+					return err
+				}
+
+				return resp
+			},
+			CmpFunc: func(got any, exp any) string {
+				gotResp, exists := got.(transferbus.Account)
+				if !exists {
+					return "error occurred"
+				}
+
+				expResp := exp.(transferbus.Account)
+
+				if gotResp.CreatedDate.Format(time.RFC3339) == expResp.CreatedDate.Format(time.RFC3339) {
+					expResp.CreatedDate = gotResp.CreatedDate
+				}
+
+				if gotResp.LastModifiedDate.Format(time.RFC3339) == expResp.LastModifiedDate.Format(time.RFC3339) {
+					expResp.LastModifiedDate = gotResp.LastModifiedDate
+				}
+
+				if gotResp.Balance.String() == expResp.Balance.String() {
+					expResp.Balance = gotResp.Balance
+				}
+
+				return cmp.Diff(gotResp, expResp)
+			},
+		},
+		{
+			Name:    "unhappy-not-found",
+			ExpResp: transferbus.ErrAccNotFound,
+			ExcFunc: func(ctx context.Context) any {
+				// declare the new user id as the sum of all ids to guarantee id is not found
+				userId := int64(0)
+				for _, u := range sd.Accounts {
+					userId += u.AccountId
+				}
+
+				resp, err := db.BusDomain.TransferBus.GetBalance(ctx, userId)
+				if err != nil {
+					return err
+				}
+
+				return resp
+			},
+			CmpFunc: func(got any, exp any) string {
+				gotResp := got.(error).Error()
+				expResp := exp.(error).Error()
 				return cmp.Diff(gotResp, expResp)
 			},
 		},
