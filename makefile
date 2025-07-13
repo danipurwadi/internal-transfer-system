@@ -45,7 +45,8 @@ lint:
 vuln-check:
 	govulncheck ./...
 
-test: CGO_ENABLED=0 go test -count=1 ./...
+test: 
+	CGO_ENABLED=0 go test -count=1 ./... | grep -v 'gen/' | grep -v 'foundation/'
 
 # ==============================================================================
 stats:

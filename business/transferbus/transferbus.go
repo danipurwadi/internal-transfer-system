@@ -87,6 +87,13 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 }
 
 func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) error {
+	if transaction.Amount.IsNegative() {
+		return ErrNegativeBalance
+	}
+	if transaction.SourceAccountID == transaction.DestinationAccountID {
+		return ErrSameAccount
+	}
+
 	tx, err := b.store.GetTx(ctx)
 	if err != nil {
 		return fmt.Errorf("get transaction: %w", err)
@@ -97,12 +104,6 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 			b.log.Error(ctx, "rollback failed", "err", err)
 		}
 	}()
-	if transaction.Amount.IsNegative() {
-		return ErrNegativeBalance
-	}
-	if transaction.SourceAccountID == transaction.DestinationAccountID {
-		return ErrSameAccount
-	}
 
 	// check that both accounts exist
 	accounts, err := dbtx.GetAccounts(ctx, []int64{transaction.SourceAccountID, transaction.DestinationAccountID})
