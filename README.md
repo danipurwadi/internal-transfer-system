@@ -69,7 +69,7 @@ The following `make` commands are available:
 *   `make start`: Start the application and the database.
 *   `make stop`: Stop the application and the database.
 *   `make exit`: Stop the application and the database and remove the volumes.
-*   `make test`: Run the tests, linter, and vulnerability checker.
-*   `make test-race`: Run the tests with the race detector, linter, and vulnerability checker.
+*   `make test`: Run the tests.
+*   `make test-race`: Run the tests with the race detector.
 *   `make stats`: Open the statistics page in the browser.
 *   `make load-test`: Run a golang script to load test the application.
