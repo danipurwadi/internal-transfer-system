@@ -53,7 +53,7 @@ func Errors(log *logger.Logger) web.MidHandler {
 	return m
 }
 
-// Errors handles errors coming out of the call chain. It detects normal
+// ConvertError handles errors coming out of the call chain. It detects normal
 // application errors which are used to respond to the client in a uniform way.
 // Unexpected errors (status >= 500) are logged.
 func ConvertError(ctx context.Context, log *logger.Logger, handler Handler) error {

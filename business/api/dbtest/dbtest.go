@@ -1,3 +1,4 @@
+// Package dbtest contains supporting code for running database tests.
 package dbtest
 
 import (
@@ -109,7 +110,7 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 		DisableTLS: true,
 	}
 
-	testDb := db.New(dbConfig)
+	testDB := db.New(dbConfig)
 	db.Migrate(dbConfig)
 
 	// -------------------------------------------------------------------------
@@ -124,7 +125,7 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	teardown := func() {
 		t.Helper()
 
-		testDb.Close()
+		testDB.Close()
 
 		fmt.Printf("******************** LOGS (%s) ********************\n", testName)
 		fmt.Print(buf.String())
@@ -132,9 +133,9 @@ func NewDatabase(t *testing.T, c *docker.Container, testName string) *Database {
 	}
 
 	return &Database{
-		DB:        testDb,
+		DB:        testDB,
 		Log:       log,
-		BusDomain: newBusDomains(testDb, log),
+		BusDomain: newBusDomains(testDB, log),
 		Teardown:  teardown,
 	}
 }

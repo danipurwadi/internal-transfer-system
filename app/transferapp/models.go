@@ -10,19 +10,19 @@ import (
 )
 
 type BalanceResponse struct {
-	AccountId string `json:"account_id"`
+	AccountID string `json:"account_id"`
 	Balance   string `json:"balance"`
 }
 
 func fromBusAccBalance(account transferbus.Account) BalanceResponse {
 	return BalanceResponse{
-		AccountId: strconv.FormatInt(account.AccountId, 10),
+		AccountID: strconv.FormatInt(account.AccountID, 10),
 		Balance:   account.Balance.String(),
 	}
 }
 
 type AccountCreationRequest struct {
-	AccountId      int64  `json:"account_id" validate:"required,min=1"`
+	AccountID      int64  `json:"account_id" validate:"required,min=1"`
 	InitialBalance string `json:"initial_balance" validate:"required"`
 }
 
@@ -41,14 +41,14 @@ func toBusAccCreation(req AccountCreationRequest) (transferbus.NewAccount, error
 	}
 
 	return transferbus.NewAccount{
-		AccountId:      req.AccountId,
+		AccountID:      req.AccountID,
 		InitialBalance: decimalBalance,
 	}, nil
 }
 
 type TransactionRequest struct {
-	SourceAccountId      int64  `json:"source_account_id" validate:"required,min=1"`
-	DestinationAccountId int64  `json:"destination_account_id" validate:"required,min=1"`
+	SourceAccountID      int64  `json:"source_account_id" validate:"required,min=1"`
+	DestinationAccountID int64  `json:"destination_account_id" validate:"required,min=1"`
 	Amount               string `json:"amount" validate:"required"`
 }
 
@@ -58,8 +58,8 @@ func toBusTransaction(req TransactionRequest) (transferbus.Transaction, error) {
 		return transferbus.Transaction{}, err
 	}
 	return transferbus.Transaction{
-		SourceAccountId:      req.SourceAccountId,
-		DestinationAccountId: req.DestinationAccountId,
+		SourceAccountID:      req.SourceAccountID,
+		DestinationAccountID: req.DestinationAccountID,
 		Amount:               decimalAmount,
 	}, nil
 }

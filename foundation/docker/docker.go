@@ -1,3 +1,4 @@
+// Package docker provides utilities for working with Docker.
 package docker
 
 import (

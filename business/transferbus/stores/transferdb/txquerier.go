@@ -1,3 +1,4 @@
+// Package transferdb provides a wrapper around the generated sqlc code to support transactions.
 package transferdb
 
 import (

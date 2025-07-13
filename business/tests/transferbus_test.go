@@ -68,12 +68,12 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 		{
 			Name: "basic",
 			ExpResp: transferbus.Account{
-				AccountId: 1,
+				AccountID: 1,
 				Balance:   decimal.NewFromFloat(100.12345),
 			},
 			ExcFunc: func(ctx context.Context) any {
 				nu := transferbus.NewAccount{
-					AccountId:      1,
+					AccountID:      1,
 					InitialBalance: decimal.NewFromFloat(100.12345),
 				}
 
@@ -101,12 +101,12 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 		{
 			Name: "correctlyroundup",
 			ExpResp: transferbus.Account{
-				AccountId: 2,
+				AccountID: 2,
 				Balance:   decimal.NewFromFloat(100.12346),
 			},
 			ExcFunc: func(ctx context.Context) any {
 				nu := transferbus.NewAccount{
-					AccountId:      2,
+					AccountID:      2,
 					InitialBalance: decimal.NewFromFloat(100.1234599999),
 				}
 
@@ -133,12 +133,12 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 		{
 			Name: "correctlyrounddown",
 			ExpResp: transferbus.Account{
-				AccountId: 3,
+				AccountID: 3,
 				Balance:   decimal.NewFromFloat(100.12345),
 			},
 			ExcFunc: func(ctx context.Context) any {
 				nu := transferbus.NewAccount{
-					AccountId:      3,
+					AccountID:      3,
 					InitialBalance: decimal.NewFromFloat(100.1234549999),
 				}
 
@@ -166,7 +166,7 @@ func accountCreation(db *dbtest.Database) []unittest.Table {
 			ExpResp: transferbus.ErrNegativeBalance,
 			ExcFunc: func(ctx context.Context) any {
 				nu := transferbus.NewAccount{
-					AccountId:      4,
+					AccountID:      4,
 					InitialBalance: decimal.NewFromFloat(-100.12345),
 				}
 
@@ -192,7 +192,7 @@ func accountQuery(db *dbtest.Database, sd dbtest.SeedData) []unittest.Table {
 	accs := sd.Accounts
 
 	sort.Slice(accs, func(i, j int) bool {
-		return accs[i].AccountId <= accs[j].AccountId
+		return accs[i].AccountID <= accs[j].AccountID
 	})
 
 	table := []unittest.Table{
@@ -201,7 +201,7 @@ func accountQuery(db *dbtest.Database, sd dbtest.SeedData) []unittest.Table {
 			ExpResp: sd.Accounts[0].Account,
 			ExcFunc: func(ctx context.Context) any {
 
-				resp, err := db.BusDomain.TransferBus.GetBalance(ctx, sd.Accounts[0].AccountId)
+				resp, err := db.BusDomain.TransferBus.GetBalance(ctx, sd.Accounts[0].AccountID)
 				if err != nil {
 					return err
 				}
@@ -240,7 +240,7 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 	accs := sd.Accounts
 
 	sort.Slice(accs, func(i, j int) bool {
-		return accs[i].AccountId <= accs[j].AccountId
+		return accs[i].AccountID <= accs[j].AccountID
 	})
 
 	type accountBalances struct {
@@ -260,8 +260,8 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 			},
 			ExcFunc: func(ctx context.Context) any {
 				r := transferbus.Transaction{
-					SourceAccountId:      accs[0].AccountId,
-					DestinationAccountId: accs[1].AccountId,
+					SourceAccountID:      accs[0].AccountID,
+					DestinationAccountID: accs[1].AccountID,
 					Amount:               validAmount,
 				}
 				err := db.BusDomain.TransferBus.CreateTransaction(ctx, r)
@@ -269,12 +269,12 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 					return err
 				}
 
-				acc1, err := db.BusDomain.TransferBus.GetBalance(ctx, accs[0].AccountId)
+				acc1, err := db.BusDomain.TransferBus.GetBalance(ctx, accs[0].AccountID)
 				if err != nil {
 					return err
 				}
 
-				acc2, err := db.BusDomain.TransferBus.GetBalance(ctx, accs[1].AccountId)
+				acc2, err := db.BusDomain.TransferBus.GetBalance(ctx, accs[1].AccountID)
 				if err != nil {
 					return err
 				}
@@ -299,8 +299,8 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 			ExpResp: transferbus.ErrInsufficientFunds,
 			ExcFunc: func(ctx context.Context) any {
 				r := transferbus.Transaction{
-					SourceAccountId:      accs[0].AccountId,
-					DestinationAccountId: accs[1].AccountId,
+					SourceAccountID:      accs[0].AccountID,
+					DestinationAccountID: accs[1].AccountID,
 					Amount:               exceedAmount,
 				}
 				err := db.BusDomain.TransferBus.CreateTransaction(ctx, r)
@@ -320,14 +320,14 @@ func transactionSubmission(db *dbtest.Database, sd dbtest.SeedData) []unittest.T
 			ExpResp: transferbus.ErrAccNotFound,
 			ExcFunc: func(ctx context.Context) any {
 				// declare the new user id as the sum of all ids to guarantee id is not found
-				invalidUserId := int64(0)
+				invalidUserID := int64(0)
 				for _, u := range sd.Accounts {
-					invalidUserId += u.AccountId
+					invalidUserID += u.AccountID
 				}
 
 				r := transferbus.Transaction{
-					SourceAccountId:      accs[0].AccountId,
-					DestinationAccountId: invalidUserId,
+					SourceAccountID:      accs[0].AccountID,
+					DestinationAccountID: invalidUserID,
 					Amount:               validAmount,
 				}
 				err := db.BusDomain.TransferBus.CreateTransaction(ctx, r)

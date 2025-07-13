@@ -16,13 +16,13 @@ func accountQuery200(sd apptest.SeedData) []apptest.Table {
 	table := []apptest.Table{
 		{
 			Name:       "basic",
-			URL:        "/accounts/" + fmt.Sprint(sd.Accounts[0].AccountId),
+			URL:        "/accounts/" + fmt.Sprint(sd.Accounts[0].AccountID),
 			Method:     http.MethodGet,
 			StatusCode: http.StatusOK,
 			Input:      nil,
 			GotResp:    &transferapp.BalanceResponse{},
 			ExpResp: &transferapp.BalanceResponse{
-				AccountId: strconv.FormatInt(sd.Accounts[0].AccountId, 10),
+				AccountID: strconv.FormatInt(sd.Accounts[0].AccountID, 10),
 				Balance:   sd.Accounts[0].Balance.String(),
 			},
 			CmpFunc: func(got any, exp any) string {

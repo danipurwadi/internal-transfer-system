@@ -1,3 +1,4 @@
+// Package debug contains handlers for debugging purposes.
 package debug
 
 import (

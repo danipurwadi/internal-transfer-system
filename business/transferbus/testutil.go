@@ -19,7 +19,7 @@ func TestNewAccounts(n int) []NewAccount {
 		idx++
 
 		nu := NewAccount{
-			AccountId:      idx,
+			AccountID:      idx,
 			InitialBalance: decimal.NewFromInt(balance + diff*idx),
 		}
 

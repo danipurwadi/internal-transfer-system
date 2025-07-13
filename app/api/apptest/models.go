@@ -2,7 +2,7 @@ package apptest
 
 import "github.com/danipurwadi/internal-transfer-system/business/api/dbtest"
 
-// Acount extends the dbtest user for api test support.
+// Account represents a test account.
 type Account struct {
 	dbtest.Account
 }

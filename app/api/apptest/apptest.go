@@ -1,3 +1,4 @@
+// Package apptest contains supporting code for running application tests.
 package apptest
 
 import (

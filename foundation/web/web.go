@@ -1,3 +1,4 @@
+// Package web contains a small web framework.
 package web
 
 import (

@@ -1,3 +1,4 @@
+// Package db contains database access logic.
 package db
 
 import (
@@ -56,21 +57,21 @@ func buildConnectionString(config Config) string {
 func Migrate(config Config) error {
 	sourceDriver, err := iofs.New(migrationFiles, "migration")
 	if err != nil {
-		return fmt.Errorf("error creating migration source driver: %s\n", err.Error())
+		return fmt.Errorf("error creating migration source driver: %w", err)
 	}
 
-	dbUrl := buildConnectionString(config)
-	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, dbUrl)
+	dbURL := buildConnectionString(config)
+	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, dbURL)
 	if err != nil {
-		return fmt.Errorf("error building db migration: %s\n", err.Error())
+		return fmt.Errorf("error building db migration: %w", err)
 	}
 	if err = m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return fmt.Errorf("Error with DB migration: %s\n", err.Error())
+		return fmt.Errorf("error with DB migration: %w", err)
 	}
 	return nil
 }
 
-func InitDatabase(ctx context.Context, config Config, newDbName string) error {
+func InitDatabase(ctx context.Context, config Config, newDBName string) error {
 	connString := buildConnectionString(config)
 	// 2. Establish a single, temporary connection
 	conn, err := connectWithRetry(ctx, connString)
@@ -81,7 +82,7 @@ func InitDatabase(ctx context.Context, config Config, newDbName string) error {
 
 	// 3. Check if the database already exists to avoid errors
 	var exists bool
-	err = conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", newDbName).Scan(&exists)
+	err = conn.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)", newDBName).Scan(&exists)
 	if err != nil {
 		return fmt.Errorf("failed to check if database exists: %w", err)
 	}
@@ -91,7 +92,7 @@ func InitDatabase(ctx context.Context, config Config, newDbName string) error {
 
 	// 4. Execute CREATE DATABASE using pgx.Identifier for safety against SQL injection
 	// Using fmt.Sprintf with %q is a simpler but less robust alternative.
-	createCommand := fmt.Sprintf("CREATE DATABASE %s", pgx.Identifier{newDbName}.Sanitize())
+	createCommand := fmt.Sprintf("CREATE DATABASE %s", pgx.Identifier{newDBName}.Sanitize())
 
 	_, err = conn.Exec(ctx, createCommand)
 	if err != nil {

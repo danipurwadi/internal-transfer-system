@@ -1,3 +1,4 @@
+// Package transferbus contains the business logic for handling transfers.
 package transferbus
 
 import (
@@ -54,7 +55,7 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 	}()
 
 	acc, err := dbtx.CreateAccount(ctx, transferdbgen.CreateAccountParams{
-		AccountID:        account.AccountId,
+		AccountID:        account.AccountID,
 		Balance:          account.InitialBalance,
 		CreatedDate:      time.Now(),
 		LastModifiedDate: time.Now(),
@@ -69,7 +70,7 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 	}
 
 	err = dbtx.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
-		AccountID:   account.AccountId,
+		AccountID:   account.AccountID,
 		Amount:      account.InitialBalance,
 		CreatedDate: time.Now(),
 	})
@@ -82,7 +83,7 @@ func (b *Bus) CreateAccount(ctx context.Context, account NewAccount) (Account, e
 		return Account{}, fmt.Errorf("commit transaction: %w", err)
 	}
 
-	return fromDbAccount(acc), nil
+	return fromDBAccount(acc), nil
 }
 
 func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) error {
@@ -99,12 +100,12 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	if transaction.Amount.IsNegative() {
 		return ErrNegativeBalance
 	}
-	if transaction.SourceAccountId == transaction.DestinationAccountId {
+	if transaction.SourceAccountID == transaction.DestinationAccountID {
 		return ErrSameAccount
 	}
 
 	// check that both accounts exist
-	accounts, err := dbtx.GetAccounts(ctx, []int64{transaction.SourceAccountId, transaction.DestinationAccountId})
+	accounts, err := dbtx.GetAccounts(ctx, []int64{transaction.SourceAccountID, transaction.DestinationAccountID})
 	if err != nil {
 		return fmt.Errorf("get accounts: %w", err)
 	}
@@ -114,7 +115,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 
 	debitResult, err := dbtx.DebitAccount(ctx, transferdbgen.DebitAccountParams{
 		Amount:    transaction.Amount,
-		AccountID: transaction.SourceAccountId,
+		AccountID: transaction.SourceAccountID,
 	})
 	if err != nil {
 		return fmt.Errorf("debit account: %w", err)
@@ -128,7 +129,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	// if Debit was successful, credit the destination account
 	_, err = dbtx.CreditAccount(ctx, transferdbgen.CreditAccountParams{
 		Amount:    transaction.Amount,
-		AccountID: transaction.DestinationAccountId,
+		AccountID: transaction.DestinationAccountID,
 	})
 	if err != nil {
 		return fmt.Errorf("credit account: %w", err)
@@ -136,7 +137,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 
 	// Record Credit Transaction
 	err = dbtx.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
-		AccountID:   transaction.SourceAccountId,
+		AccountID:   transaction.SourceAccountID,
 		Amount:      transaction.Amount.Neg(),
 		CreatedDate: time.Now(),
 	})
@@ -147,7 +148,7 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 
 	// Record Debit Transaction
 	err = dbtx.CreateTransaction(ctx, transferdbgen.CreateTransactionParams{
-		AccountID:   transaction.DestinationAccountId,
+		AccountID:   transaction.DestinationAccountID,
 		Amount:      transaction.Amount,
 		CreatedDate: time.Now(),
 	})
@@ -162,15 +163,15 @@ func (b *Bus) CreateTransaction(ctx context.Context, transaction Transaction) er
 	return nil
 }
 
-func (b *Bus) GetBalance(ctx context.Context, accountId int64) (Account, error) {
+func (b *Bus) GetBalance(ctx context.Context, accountID int64) (Account, error) {
 	// check that account exist in the first place
-	account, err := b.store.GetAccount(ctx, accountId)
+	account, err := b.store.GetAccount(ctx, accountID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Account{}, ErrAccNotFound
 		}
-		return Account{}, fmt.Errorf("get account: %d: %w", accountId, err)
+		return Account{}, fmt.Errorf("get account: %d: %w", accountID, err)
 	}
 
-	return fromDbAccount(account), nil
+	return fromDBAccount(account), nil
 }

@@ -18,7 +18,7 @@ func accountCreation200() []apptest.Table {
 			Method:     http.MethodPost,
 			StatusCode: http.StatusCreated,
 			Input: &transferapp.AccountCreationRequest{
-				AccountId:      2,
+				AccountID:      2,
 				InitialBalance: "100.12345",
 			},
 			GotResp: nil,
@@ -54,7 +54,7 @@ func accountCreation400() []apptest.Table {
 			Method:     http.MethodPost,
 			StatusCode: http.StatusBadRequest,
 			Input: &transferapp.AccountCreationRequest{
-				AccountId:      2,
+				AccountID:      2,
 				InitialBalance: "-100.12345",
 			},
 			GotResp: &customerror.Error{},
@@ -69,7 +69,7 @@ func accountCreation400() []apptest.Table {
 			Method:     http.MethodPost,
 			StatusCode: http.StatusBadRequest,
 			Input: &transferapp.AccountCreationRequest{
-				AccountId:      2,
+				AccountID:      2,
 				InitialBalance: "",
 			},
 			GotResp: &customerror.Error{},
@@ -91,7 +91,7 @@ func accountCreation409(sd apptest.SeedData) []apptest.Table {
 			Method:     http.MethodPost,
 			StatusCode: http.StatusConflict,
 			Input: &transferapp.AccountCreationRequest{
-				AccountId:      sd.Accounts[0].AccountId,
+				AccountID:      sd.Accounts[0].AccountID,
 				InitialBalance: "100.12345",
 			},
 			GotResp: &customerror.Error{},

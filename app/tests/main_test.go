@@ -11,6 +11,7 @@ import (
 	"github.com/danipurwadi/internal-transfer-system/business/api/dbtest"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus"
 	"github.com/danipurwadi/internal-transfer-system/business/transferbus/stores/transferdb"
+	"github.com/danipurwadi/internal-transfer-system/foundation/customerror"
 	"github.com/danipurwadi/internal-transfer-system/foundation/docker"
 	"github.com/danipurwadi/internal-transfer-system/foundation/web"
 )
@@ -51,4 +52,8 @@ func startTest(t *testing.T, testName string) *apptest.Test {
 	webClient := web.NewClient(middleware.Logger(db.Log), middleware.Errors(db.Log))
 	transferApp.Routes(webClient)
 	return apptest.New(db, webClient)
+}
+
+func toErrorPtr(err customerror.Error) *customerror.Error {
+	return &err
 }

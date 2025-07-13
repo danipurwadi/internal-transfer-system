@@ -1,3 +1,4 @@
+// Package tests contains test models and helpers.
 package apptest
 
 import "github.com/danipurwadi/internal-transfer-system/business/api/dbtest"

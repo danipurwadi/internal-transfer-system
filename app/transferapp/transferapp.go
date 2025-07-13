@@ -1,3 +1,4 @@
+// Package transferapp contains the application logic for handling transfers.
 package transferapp
 
 import (
@@ -65,22 +66,22 @@ func (a *App) createAccount(ctx context.Context, w http.ResponseWriter, r *http.
 }
 
 func (a *App) getBalance(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	accountId := r.PathValue("account_id")
-	if accountId == "" {
+	accountID := r.PathValue("account_id")
+	if accountID == "" {
 		return customerror.New(customerror.InvalidArgument, fmt.Errorf("account id is required"))
 	}
 
-	accId, err := strconv.ParseInt(accountId, 10, 0)
+	accID, err := strconv.ParseInt(accountID, 10, 0)
 	if err != nil {
 		return customerror.New(customerror.InvalidArgument, fmt.Errorf("invalid account id"))
 	}
 
-	balance, err := a.transferbus.GetBalance(ctx, accId)
+	balance, err := a.transferbus.GetBalance(ctx, accID)
 	if err != nil {
 		if errors.Is(err, transferbus.ErrAccNotFound) {
 			return customerror.New(customerror.NotFound, err)
 		}
-		return customerror.Newf(customerror.Internal, "failed to get balance: accId[%d]: %s", accId, err)
+		return customerror.Newf(customerror.Internal, "failed to get balance: accId[%d]: %s", accID, err)
 	}
 
 	return web.Respond(ctx, w, fromBusAccBalance(balance), http.StatusOK)

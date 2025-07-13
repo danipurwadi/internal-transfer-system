@@ -1,3 +1,4 @@
+// Package customerror provides a custom error type for the application.
 package customerror
 
 import (

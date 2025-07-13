@@ -1,3 +1,4 @@
+// Package middleware contains shared middleware for the application.
 package middleware
 
 import "context"
